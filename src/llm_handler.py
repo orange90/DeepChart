@@ -80,31 +80,31 @@ class DeepSeekHandler:
             raise ValueError("请在配置文件中设置API_KEY")
     
     def generate_mermaid(self, prompt):
-        system_prompt = """你是一个专业的 Mermaid 图表生成助手。按照下面实例输出
+        system_prompt = """你是一个专业的 Mermaid 图表生成助手。你的任务是将用户的需求转换为有效的 Mermaid 图表代码。
 
-        正确示例1（请按此格式输出）：
-        
-        graph TD
-            A[开始] --> B[处理]
-            B --> C[判断条件]
-            C -->|是| D[处理1]
-            C -->|否| E[处理2]
-            D --> F[结束]
-            E --> F
+规则：
+1. 只返回 Mermaid 代码，不要包含任何解释或思考过程
+2. 不要使用 ```mermaid 标记
+3. 确保代码符合 Mermaid 语法
+4. 代码必须可以直接渲染为图表
 
-        正确示例2（请按此格式输出）：
-       gantt
-        title 项目计划
-        section 阶段1
-        任务A :a1, 2025-02-13, 3d
-        任务B :after a1, 2d
-        section 阶段2
-        任务C :2025-02-18, 4d
-        """
+示例输入：
+"画一个流程图，描述用户登录的过程"
+
+示例输出：
+graph TD
+    A[开始] --> B[输入用户名密码]
+    B --> C{验证}
+    C -->|成功| D[登录成功]
+    C -->|失败| E[显示错误]
+    E --> B
+    D --> F[结束]
+
+请直接输出 Mermaid 代码："""
 
         if self.config['llm']['type'] == 'local':
             # 使用本地模型生成
-            input_text = f"系统：{system_prompt}\n\n用户需求：{prompt}\n\n请直接输出 Mermaid 图表代码，不要包含任何其他内容："
+            input_text = f"{system_prompt}\n\n用户需求：{prompt}\n"
             
             try:
                 response = self.model.create_completion(
@@ -113,20 +113,26 @@ class DeepSeekHandler:
                     temperature=0.7,
                     top_p=0.95,
                     repeat_penalty=1.1,
-                    stop=["用户", "Human:", "Assistant:"],  # 设置停止词
-                    echo=False  # 不返回输入文本
+                    stop=["用户", "Human:", "Assistant:", "```"],  # 更新停止词
+                    echo=False
                 )
                 
-                # 提取生成的文本
+                # 提取生成的文本并清理
+                mermaid_code = response['choices'][0]['text'].strip()
                 
-                res = response['choices'][0]['text'].strip()
-                # 提取</think>之后的内容
-                print(res)
-                if "</think>" in res:
-                    res = res.split("</think>")[-1].strip()
-
-                print(res)
-                return res
+                # 移除可能的思考过程
+                if "graph" in mermaid_code:
+                    mermaid_code = mermaid_code[mermaid_code.find("graph"):]
+                elif "sequenceDiagram" in mermaid_code:
+                    mermaid_code = mermaid_code[mermaid_code.find("sequenceDiagram"):]
+                elif "gantt" in mermaid_code:
+                    mermaid_code = mermaid_code[mermaid_code.find("gantt"):]
+                elif "classDiagram" in mermaid_code:
+                    mermaid_code = mermaid_code[mermaid_code.find("classDiagram"):]
+                elif "flowchart" in mermaid_code:
+                    mermaid_code = mermaid_code[mermaid_code.find("flowchart"):]
+                
+                return mermaid_code
 
             except Exception as e:
                 print(f"生成失败，错误信息: {str(e)}")
@@ -138,11 +144,11 @@ class DeepSeekHandler:
                     "model": "Pro/deepseek-ai/DeepSeek-R1",
                     "messages": [
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": f"请直接输出 Mermaid 图表代码，不要包含任何其他内容：{prompt}"}
+                        {"role": "user", "content": prompt}
                     ],
                     "stream": False,
                     "max_tokens": 512,
-                    "stop": ["null"],
+                    "stop": ["```"],
                     "temperature": 0.7,
                     "top_p": 0.7,
                     "top_k": 50,
@@ -150,9 +156,6 @@ class DeepSeekHandler:
                     "n": 1,
                     "response_format": {"type": "text"}
                 }
-
-              
-                
 
                 response = requests.post(
                     self.api_url,
@@ -165,18 +168,21 @@ class DeepSeekHandler:
                 
                 # 解析响应
                 result = response.json()
-                print(result)
                 if 'choices' in result and len(result['choices']) > 0:
                     content = result['choices'][0]['message']['content'].strip()
                     
-                    # 提取</think>之后的内容
-                    if "</think>" in content:
-                        content = content.split("</think>")[-1].strip()
+                    # 提取 Mermaid 代码
+                    if "graph" in content:
+                        content = content[content.find("graph"):]
+                    elif "sequenceDiagram" in content:
+                        content = content[content.find("sequenceDiagram"):]
+                    elif "gantt" in content:
+                        content = content[content.find("gantt"):]
+                    elif "classDiagram" in content:
+                        content = content[content.find("classDiagram"):]
+                    elif "flowchart" in content:
+                        content = content[content.find("flowchart"):]
                     
-                    # 提取</think>之后的内容
-                    print('------这是DeepSeek的输出------')
-                    print(content)
-
                     return content
                 else:
                     raise Exception("API返回的响应格式不正确")
