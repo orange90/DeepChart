@@ -22,3 +22,16 @@
 ## 许可证
 
 MIT License 
+
+## 安全说明
+
+1. 不要直接在配置文件中存储 API Key
+2. 使用环境变量存储敏感信息：
+   ```bash
+   # Linux/Mac
+   export DEEPSEEK_API_KEY=your-api-key-here
+   
+   # Windows
+   set DEEPSEEK_API_KEY=your-api-key-here
+   ```
+3. 或者创建 .env 文件（确保已添加到 .gitignore） 
