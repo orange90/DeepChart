@@ -1,2 +1,15 @@
+# 配置文件
+config/*.yaml
+!config/config.yaml.example
 
-models/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf
+# 模型文件
+models/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+
+# 输出目录
+output/
