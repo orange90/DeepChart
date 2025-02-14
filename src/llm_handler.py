@@ -4,6 +4,7 @@ from llama_cpp import Llama
 import requests
 import torch
 import platform
+import json
 
 class DeepSeekHandler:
     def __init__(self, config):
@@ -13,6 +14,11 @@ class DeepSeekHandler:
             self._init_local_model()
         else:
             self._check_api_key()
+            self.api_url = "https://api.siliconflow.cn/v1/chat/completions"
+            self.headers = {
+                "Authorization": f"Bearer {config['llm']['api_key']}",
+                "Content-Type": "application/json"
+            }
     
     def _init_local_model(self):
         model_path = self.config['llm']['model_path']
@@ -70,7 +76,7 @@ class DeepSeekHandler:
             raise
     
     def _check_api_key(self):
-        if not self.config['api_key']:
+        if not self.config['llm']['api_key']:
             raise ValueError("请在配置文件中设置API_KEY")
     
     def generate_mermaid(self, prompt):
@@ -103,7 +109,7 @@ class DeepSeekHandler:
             try:
                 response = self.model.create_completion(
                     input_text,
-                    max_tokens=100000,
+                    max_tokens=2000,
                     temperature=0.7,
                     top_p=0.95,
                     repeat_penalty=1.1,
@@ -126,6 +132,58 @@ class DeepSeekHandler:
                 print(f"生成失败，错误信息: {str(e)}")
                 raise
         else:
-            # 使用远程API生成
-            # 这里添加API调用逻辑
-            pass 
+            try:
+                # 构建API请求
+                payload = {
+                    "model": "Pro/deepseek-ai/DeepSeek-R1",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"请直接输出 Mermaid 图表代码，不要包含任何其他内容：{prompt}"}
+                    ],
+                    "stream": False,
+                    "max_tokens": 512,
+                    "stop": ["null"],
+                    "temperature": 0.7,
+                    "top_p": 0.7,
+                    "top_k": 50,
+                    "frequency_penalty": 0.5,
+                    "n": 1,
+                    "response_format": {"type": "text"}
+                }
+
+              
+                
+
+                response = requests.post(
+                    self.api_url,
+                    json=payload,
+                    headers=self.headers
+                    )
+                
+                # 检查响应状态
+                response.raise_for_status()
+                
+                # 解析响应
+                result = response.json()
+                print(result)
+                if 'choices' in result and len(result['choices']) > 0:
+                    content = result['choices'][0]['message']['content'].strip()
+                    
+                    # 提取</think>之后的内容
+                    if "</think>" in content:
+                        content = content.split("</think>")[-1].strip()
+                    
+                    # 提取</think>之后的内容
+                    print('------这是DeepSeek的输出------')
+                    print(content)
+
+                    return content
+                else:
+                    raise Exception("API返回的响应格式不正确")
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"API请求失败: {str(e)}")
+                raise
+            except Exception as e:
+                print(f"生成失败，错误信息: {str(e)}")
+                raise 

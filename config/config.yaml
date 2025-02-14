@@ -1,7 +1,7 @@
 llm:
-  type: local
-  model_path: "models/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf"  # 本地模型路径
-  api_key: ""  # 远程API密钥
+  type: "api"  # 改为 "api" 使用 API 模式
+  model_path: "models/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf"  # 在API模式下不需要
+  api_key: "***REMOVED***"  # API密钥直接暴露在配置文件中
 
 mermaid:
   output_dir: "output" 
