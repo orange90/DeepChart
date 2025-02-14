@@ -2,6 +2,10 @@
 config/*.yaml
 !config/config.yaml.example
 
+# 环境变量
+.env
+.env.*
+
 # 模型文件
 models/
 
@@ -9,7 +13,10 @@ models/
 __pycache__/
 *.py[cod]
 *$py.class
-.env
 
 # 输出目录
 output/
+
+# 敏感信息
+sensitive.txt
+config/config.yaml
