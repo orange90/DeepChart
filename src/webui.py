@@ -2,6 +2,7 @@ import streamlit as st
 import yaml
 import os
 from llm_handler import DeepSeekHandler
+from streamlit_mermaid import st_mermaid
 
 def load_config():
     """加载配置文件"""
@@ -11,32 +12,12 @@ def load_config():
 
 def main():
     st.set_page_config(
-        page_title="Mermaid 图表生成器",
+        page_title="DeepChart",
         page_icon="📊",
         layout="wide"
     )
     
-    st.title("Mermaid 图表生成器")
-    
-    # 加载示例提示
-    example_prompt = """示例1：
-    graph TD
-        A[开始] --> B[处理]
-        B --> C[判断条件]
-        C -->|是| D[处理1]
-        C -->|否| E[处理2]
-        D --> F[结束]
-        E --> F
-        
-    示例2：
-    gantt
-        title 项目计划
-        section 阶段1
-        任务A :a1, 2025-02-13, 3d
-        任务B :after a1, 2d
-        section 阶段2
-        任务C :2025-02-18, 4d
-    """
+    st.title("DeepChart - AI 图表生成器")
     
     # 创建两列布局
     col1, col2 = st.columns([1, 1])
@@ -48,6 +29,8 @@ def main():
             height=200,
             placeholder="例如：画一个流程图，描述用户登录的过程..."
         )
+        
+        show_code = st.checkbox("显示 Mermaid 代码", value=False)
         
         if st.button("生成图表", type="primary"):
             if user_input:
@@ -63,12 +46,21 @@ def main():
                         # 在右侧显示结果
                         with col2:
                             st.subheader("生成结果")
-                            st.code(mermaid_code, language="mermaid")
+                            # 渲染图表
+                            st_mermaid(mermaid_code, height="400px")
                             
-                            # 添加复制按钮
-                            st.button("复制代码", key="copy_button", 
-                                    on_click=lambda: st.write(f'<script>navigator.clipboard.writeText(`{mermaid_code}`)</script>', 
-                                    unsafe_allow_html=True))
+                            # 如果选择显示代码，则显示代码
+                            if show_code:
+                                st.subheader("Mermaid 代码")
+                                st.code(mermaid_code, language="mermaid")
+                                st.button(
+                                    "复制代码",
+                                    key="copy_button",
+                                    on_click=lambda: st.write(
+                                        f'<script>navigator.clipboard.writeText(`{mermaid_code}`)</script>',
+                                        unsafe_allow_html=True
+                                    )
+                                )
                             
                 except Exception as e:
                     st.error(f"生成失败：{str(e)}")
@@ -78,7 +70,16 @@ def main():
     with col2:
         if not user_input:
             st.subheader("示例")
-            st.code(example_prompt, language="mermaid")
+            example_code = """
+graph TD
+    A[开始] --> B[处理]
+    B --> C[判断条件]
+    C -->|是| D[处理1]
+    C -->|否| E[处理2]
+    D --> F[结束]
+    E --> F
+            """
+            st_mermaid(example_code, height="400px")
 
 if __name__ == "__main__":
     main() 
