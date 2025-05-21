@@ -70,6 +70,7 @@ MIT License
 
 欢迎任何形式的贡献！请提交问题或拉取请求。
 
-## 联系
+## Star History
 
-如有任何问题，请联系 [your_email@example.com](mailto:your_email@example.com)。 
+[![Star History Chart](https://api.star-history.com/svg?repos=orange90/DeepChart&type=Date)](https://www.star-history.com/#orange90/DeepChart&Date)
+
